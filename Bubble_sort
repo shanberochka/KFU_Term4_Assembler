@@ -1,0 +1,150 @@
+section	'.data' 
+    array db 5, 4, 3, 2, 1
+    array_size equ 5
+    
+section '.bss'  
+    _bss_char eb 1
+
+section	'.text' 
+_start:       ;must be declared for using gcc
+	mov eax, array
+	mov ebx, array_size
+	call bubble_sort
+	call print_bytes
+	call print_line
+	call exit
+
+section 'bubble_sort'
+; input
+; eax = array
+;ebx = array_size
+bubble_sort:
+    push ebx
+    push ecx
+    push edx
+    xor ecx, ecx; i
+    .first_iter:
+        cmp ecx, ebx
+        je .break_first
+        xor edx, edx; j
+        push ebx
+        sub ebx, ecx
+        dec ebx
+        .second_iter:
+            cmp edx, ebx
+            je .break_second
+            push ebx
+            mov bl, [eax+edx]
+            cmp bl, [eax+edx+1]
+            jg .swap
+            jmp .pass
+        .swap:
+            push ecx
+            mov cl, [eax+edx+1]
+            mov [eax+edx+1], bl
+            mov [eax+edx], cl
+            pop ecx
+        
+        .pass:
+            pop ebx
+            inc edx
+            jmp .second_iter
+        .break_second:
+            pop ebx
+            inc ecx
+            jmp .first_iter
+    .break_first:
+        pop edx
+        pop ecx
+        pop ebx
+        ret
+
+section '.print_number' 
+; | input:
+; rax = number
+print_number:
+    push eax
+    push ebx
+    push ecx
+    push edx
+    xor ecx, ecx
+    .next_iter:
+        mov ebx, 10
+        xor edx, edx
+        div ebx
+        add edx, '0'
+        push edx
+        inc ecx
+        cmp eax, 0
+        je .print_iter
+        jmp .next_iter
+    .print_iter:
+        cmp ecx, 0
+        je .close
+        pop eax
+        call print_char
+        dec ecx
+        jmp .print_iter
+    .close:
+        pop edx
+        pop ecx
+        pop ebx
+        pop eax
+        ret
+
+section '.print_char' 
+; | input
+; rax = char
+print_char:
+    push edx
+    push ecx
+    push ebx
+    push eax
+
+    mov [_bss_char], al
+
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, 1
+    mov edx, 1
+    int 0x80
+
+    pop eax
+    pop ebx
+    pop ecx
+    pop edx
+    ret
+
+section '.print_bytes' 
+; include
+; eax = array
+; ebx = array_size
+print_bytes:
+    push eax
+    push ebx
+    push ecx
+    mov ecx, eax
+    xor eax, eax
+    mov al, '['
+    call print_char
+    mov al, ' '
+    call print_char
+    .next_iter:
+        cmp ebx, 0
+        je .close
+        mov al, [ecx]
+        call print_number
+        mov al, ' '
+        call print_char
+        
+        inc ecx
+        dec ebx
+        jmp .next_iter
+    .close:
+        mov al, ']'
+        call print_char
+        pop ecx
+        pop ebx
+        pop eax
+        ret
+        
